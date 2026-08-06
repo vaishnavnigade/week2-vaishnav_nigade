@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.order import Order
+from app.models.order import Order, OrderItem
 
 
 def create_order(db: Session, order: Order) -> Order:

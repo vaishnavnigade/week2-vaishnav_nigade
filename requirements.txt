@@ -6,3 +6,5 @@ python-dotenv
 psycopg2-binary
 pwdlib
 pydantic[email]
+pwdlib[argon2]
+dotenv

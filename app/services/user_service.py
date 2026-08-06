@@ -13,8 +13,10 @@ def register_user(db: Session, data: UserRegister) -> User:
         raise AlreadyExistsError("User already exists")
 
     user = User(
+        name=data.name,
         email=data.email,
         hashed_password=hash_password(data.password),
+        mobile=data.mobile
     )
     return user_repository.create_user(db, user)
 

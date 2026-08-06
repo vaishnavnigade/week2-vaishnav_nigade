@@ -2,8 +2,10 @@ from pydantic import BaseModel, EmailStr
 
 
 class UserRegister(BaseModel):
+    name:str
     email: EmailStr
     password: str
+    mobile:str
 
 
 class UserLogin(BaseModel):
@@ -12,6 +14,7 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(BaseModel):
+    
     email: EmailStr
     message: str
 

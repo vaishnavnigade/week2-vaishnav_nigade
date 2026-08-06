@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.db.sessions import get_db
 from app.schemas.product_schema import (
     CategoryCreate,
     CategoryRead,

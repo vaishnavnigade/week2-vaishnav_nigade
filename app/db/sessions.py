@@ -1,28 +1,62 @@
 import os
-from typing import Generator
+from collections.abc import Generator
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
-# Load variables from the .env file at the project root
+
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is not set. Check your .env file.")
+user = os.getenv("POSTGRES_USER")
+password = os.getenv("POSTGRES_PASSWORD_URL_ENCODED")
+port = os.getenv("POSTGRES_PORT", "5432")
+db_name = os.getenv("POSTGRES_DB")
+hostname = os.getenv("POSTGRES_HOST", "localhost")
 
-# The engine manages the connection pool to PostgreSQL.
-# pool_pre_ping=True checks a connection is alive before using it.
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Validate required parts (port has a default, so it's not required)
+missing = [
+    name
+    for name, value in {
+        "POSTGRES_USER": user,
+        "POSTGRES_PASSWORD_URL_ENCODED": password,
+        "POSTGRES_DB": db_name,
+        "POSTGRES_HOST": hostname
+    }.items()
+    if not value
+]
 
-# SessionLocal is a factory that produces new database sessions.
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+if missing:
+    raise RuntimeError(
+        f"Missing required environment variables: {', '.join(missing)}. "
+        "Check your .env file."
+    )
+
+DATABASE_URL = f"postgresql://{user}:{password}@{hostname}:{port}/{db_name}"
+
+connect_args = (
+    {"check_same_thread": False}
+    if DATABASE_URL.startswith("sqlite")
+    else {}
+)
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    pool_pre_ping=True,
+)
+
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+)
 
 
-def get_db() -> Generator:
-    """FastAPI dependency: yield a DB session per request and always close it."""
+def get_db() -> Generator[Session, None, None]:
+    """Yield one database session per request and always close it."""
     db = SessionLocal()
+
     try:
         yield db
     finally:

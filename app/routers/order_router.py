@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.db.sessions import get_db
 from app.schemas.order_schema import OrderRead
 from app.services import order_service
 from app.utils.exceptions import NotFoundError, OutOfStockError
