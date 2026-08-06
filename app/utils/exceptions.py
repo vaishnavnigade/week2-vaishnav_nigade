@@ -4,7 +4,12 @@ class NotFoundError(Exception):
 
 
 class AlreadyExistsError(Exception):
-    """Raised when creating a record that violates uniqueness."""
+    """Raised when a record already exists (e.g. duplicate email)."""
+    pass
+
+
+class InvalidCredentialsError(Exception):
+    """Raised when login email/password is wrong."""
     pass
 
 

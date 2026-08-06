@@ -2,29 +2,31 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.repositories import user_repository
-from app.schemas.user_schema import UserCreate
-from app.utils.exceptions import AlreadyExistsError, NotFoundError
+from app.schemas.user_schema import UserLogin, UserRegister
+from app.utils.exceptions import AlreadyExistsError, InvalidCredentialsError
+from app.utils.helpers import hash_password, verify_password
 
 
-def create_user(db: Session, data: UserCreate) -> User:
-    # business rule: email must be unique
+def register_user(db: Session, data: UserRegister) -> User:
+    # same check as training: "User already exists"
     if user_repository.get_user_by_email(db, data.email):
-        raise AlreadyExistsError("Email already registered")
+        raise AlreadyExistsError("User already exists")
 
     user = User(
-        username=data.username,
         email=data.email,
-        password=data.password,  # NOTE: hash before storing in production
+        hashed_password=hash_password(data.password),
     )
     return user_repository.create_user(db, user)
 
 
-def get_user(db: Session, user_id: int) -> User:
-    user = user_repository.get_user(db, user_id)
-    if user is None:
-        raise NotFoundError("User not found")
-    return user
+def login_user(db: Session, data: UserLogin) -> User:
+    stored_user = user_repository.get_user_by_email(db, data.email)
 
+    # same as training: fail identically for missing user OR wrong password
+    if not stored_user:
+        raise InvalidCredentialsError("Invalid email or password")
 
-def list_users(db: Session) -> list[User]:
-    return user_repository.list_users(db)
+    if not verify_password(data.password, stored_user.hashed_password):
+        raise InvalidCredentialsError("Invalid email or password")
+
+    return stored_user

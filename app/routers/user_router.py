@@ -2,29 +2,26 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.user_schema import UserCreate, UserRead
+from app.schemas.user_schema import UserLogin, UserRegister, UserResponse
 from app.services import user_service
-from app.utils.exceptions import AlreadyExistsError, NotFoundError
+from app.utils.exceptions import AlreadyExistsError, InvalidCredentialsError
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)):
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def register_user(payload: UserRegister, db: Session = Depends(get_db)):
     try:
-        return user_service.create_user(db, payload)
+        user = user_service.register_user(db, payload)
     except AlreadyExistsError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return {"email": user.email, "message": "User registered successfully"}
 
 
-@router.get("/{user_id}", response_model=UserRead)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+@router.post("/login", response_model=UserResponse)
+def login_user(payload: UserLogin, db: Session = Depends(get_db)):
     try:
-        return user_service.get_user(db, user_id)
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@router.get("", response_model=list[UserRead])
-def list_users(db: Session = Depends(get_db)):
-    return user_service.list_users(db)
+        user = user_service.login_user(db, payload)
+    except InvalidCredentialsError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    return {"email": user.email, "message": "Login successful"}
